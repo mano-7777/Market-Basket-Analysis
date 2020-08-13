@@ -1,0 +1,236 @@
+---
+title: "MARKET BASKET ANALYSIS"
+output: html_document
+author: Mano R
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+code_folding: hide
+theme: cosmo
+highlight: tango
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<center><img
+src="https://i.imgur.com/Opyn1vo.png">
+</center>
+
+# **Introduction**
+
+This project is to perform apirior alogoritm in the dataset.For more information about these topics, please check in the following links: 
+
+* [Market Basket Analysis](https://en.wikipedia.org/wiki/Affinity_analysis)
+
+* [Apriori algorithm](https://en.wikipedia.org/wiki/Apriori_algorithm)
+
+* [Association rule learning](https://en.wikipedia.org/wiki/Association_rule_learning)
+
+First it's important to define the Apriori algorithm, including some statistical concepts  (support, confidence, lift and conviction) to select interesting rules. 
+
+If you want more information about these measures, please check [here](https://en.wikipedia.org/wiki/Association_rule_learning).
+
+# **Loading Data**
+```{r message= FALSE,warning=FALSE}
+library(arules)
+library(plotly)
+library(arulesViz)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(gridExtra)
+```
+# ***DATASET***
+```{r}
+dataset <- read.csv('Market_Basket_Optimisation.csv' ,header = F)
+dataset <- read.transactions('Market_Basket_Optimisation.csv',sep = ',',rm.duplicates = T)
+```
+## DISCRIPTION OF THE DATASET {.tabset .tabset-fade .tabset-pills}
+### Transcrpit
+```{r fig.align='center', message=FALSE, warning=FALSE}
+# Transaction object
+dataset
+```
+
+### SUMMARY 
+```{r fig.align='center', message=FALSE, warning=FALSE}
+# Summary
+summary(dataset)
+```
+### STRUCTURE
+```{r fig.align='center', message=FALSE, warning=FALSE}
+# Structure
+str(dataset)
+```
+### GLIMPSE
+```{r fig.algin='center', message=FALSE,warning=FALSE}
+# Glimpse
+glimpse(dataset)
+```
+
+# **Data analysis** 
+```{r}
+# Absolute Item Frequency Plot
+itemFrequencyPlot(dataset, topN=15, type="absolute", col="wheat2",xlab="Item name", 
+                  ylab="Frequency (absolute)", main="Absolute Item Frequency Plot")
+```
+
+```{r}
+# Relative Item Frequency Plot
+itemFrequencyPlot(dataset, topN=15, type="relative", col="lightcyan2", xlab="Item name", 
+                  ylab="Frequency (relative)", main="Relative Item Frequency Plot")
+```
+# **Apriori algorithm**
+## Choice of support and confidence
+In the following graphs we can see the number of rules generated with a support level of 10%, 5%, 1% and 0.5%.
+```{r message=FALSE }
+rules <- apriori(data = dataset, parameter = list(support = 0.003,confidence = 0.2))
+```
+
+
+```{r}
+# Support and confidence values
+supportLevels <- c(0.1, 0.05, 0.01, 0.005)
+confidenceLevels <- c(0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1)
+```
+
+```{r}
+# Empty integers 
+rules_sup10 <- integer(length=9)
+rules_sup5 <- integer(length=9)
+rules_sup1 <- integer(length=9)
+rules_sup0.5 <- integer(length=9)
+```
+
+```{r include=FALSE, warning=FALSE}
+# Apriori algorithm with a support level of 10%
+for (i in 1:length(confidenceLevels)) {
+  
+  rules_sup10[i] <- length(apriori(dataset, parameter=list(sup=supportLevels[1], 
+                                   conf=confidenceLevels[i], target="rules")))
+  
+}
+
+# Apriori algorithm with a support level of 5%
+for (i in 1:length(confidenceLevels)){
+  
+  rules_sup5[i] <- length(apriori(dataset, parameter=list(sup=supportLevels[2], 
+                                  conf=confidenceLevels[i], target="rules")))
+  
+}
+# Apriori algorithm with a support level of 1%
+for (i in 1:length(confidenceLevels)){
+  
+  rules_sup1[i] <- length(apriori(dataset, parameter=list(sup=supportLevels[3], 
+                                  conf=confidenceLevels[i], target="rules")))
+  
+}
+
+# Apriori algorithm with a support level of 0.5%
+for (i in 1:length(confidenceLevels)){
+  
+  rules_sup0.5[i] <- length(apriori(dataset, parameter=list(sup=supportLevels[4], 
+                                    conf=confidenceLevels[i], target="rules")))
+  
+}
+```
+
+```{r include=FALSE}
+# Number of rules found with a support level of 10%
+plot1 <- qplot(confidenceLevels, rules_sup10, geom=c("point", "line"), 
+               xlab="Confidence level", ylab="Number of rules found", 
+               main="Apriori with a support level of 10%") +
+  theme_bw()
+```
+
+```{r include=FALSE}
+# Number of rules found with a support level of 5%
+plot2 <- qplot(confidenceLevels, rules_sup5, geom=c("point", "line"), 
+               xlab="Confidence level", ylab="Number of rules found", 
+               main="Apriori with a support level of 5%") + 
+  scale_y_continuous(breaks=seq(0, 10, 2)) +
+  theme_bw()
+ 
+```
+
+```{r include=FALSE}
+# Number of rules found with a support level of 1%
+plot3 <- qplot(confidenceLevels, rules_sup1, geom=c("point", "line"), 
+               xlab="Confidence level", ylab="Number of rules found", 
+               main="Apriori with a support level of 1%") + 
+  scale_y_continuous(breaks=seq(0, 50, 10)) +
+  theme_bw()
+```
+
+```{r include=FALSE}
+# Number of rules found with a support level of 0.5%
+plot4 <- qplot(confidenceLevels, rules_sup0.5, geom=c("point", "line"), 
+               xlab="Confidence level", ylab="Number of rules found", 
+               main="Apriori with a support level of 0.5%") + 
+  scale_y_continuous(breaks=seq(0, 130, 20)) +
+  theme_bw()
+```
+
+```{r paged.print=TRUE}
+# Subplot
+grid.arrange(plot1, plot2, plot3, plot4, ncol=2)
+```
+
+### **Output**
+```{r}
+inspect(sort(rules , by = 'lift')[1:10])
+```
+
+# **Data Visualize (rules)** 
+```{r message=FALSE, warning=FALSE}
+# Scatter plot
+plotly_arules(rules)
+```
+### Head of rules
+```{r}
+
+head(quality(rules))
+```
+
+```{r }
+# Scatter
+plot(rules,interestMeasure=c("support","lift"),shading = "confidence",jitter=0)
+```
+
+```{r}
+subrules2 <- head(rules,n=10,by="lift")
+```
+# **Data visual using arulesViz**
+
+## Data Visuvalization {.tabset .tabset-fade .tabset-pills}
+
+### Graph
+```{r fig.align='center', message=FALSE, warning=FALSE}
+# Graph (circular layout)
+plot(subrules2, method="graph", control=list(layout=igraph::in_circle()))
+```
+  
+### Parallel coordinates plot
+```{r fig.align='center', message=FALSE, warning=FALSE}
+# Parallel coordinates plot
+plot(subrules2, method="paracoord", control=list(reorder=TRUE))
+```
+  
+### Grouped matrix plot
+```{r fig.align='center', message=FALSE, warning=FALSE}
+# Grouped matrix plot
+plot(subrules2, method="grouped")
+```
+
+### Scatter plot
+```{r fig.align='center', message=FALSE, warning=FALSE}
+# Scatter plot
+plot(subrules2, measure=c("support", "lift"), shading="confidence", jitter=0)
+```
+
+### OUTPUT
+```{r fig.align='center' ,message=FALSE, warning=FALSE}
+#Output
+inspect(sort(rules ,by='lift')[1:50])
+```
